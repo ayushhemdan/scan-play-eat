@@ -23,7 +23,7 @@ const PARTICLES = [
   { x: 88, y: 8,  s: 2, d: 7.8, delay: 0.4  },
 ];
 
-const YOUR_WHATSAPP = "919999999999"; // replace with your number
+const YOUR_WHATSAPP = "918979616111";
 const WA_LINK = `https://wa.me/${YOUR_WHATSAPP}?text=Hi!%20I%20want%20to%20get%20my%20cafe%20on%20ScanPlayEat`;
 
 const PROBLEMS = [
