@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import type { Cafe } from "@/types/cafe";
 import CafeShell from "@/components/shell/CafeShell";
 import CafeHero from "@/components/shell/CafeHero";
@@ -20,6 +20,17 @@ interface Props {
 export default function CafePageClient({ cafe }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("menu");
   const [qrOpen, setQrOpen] = useState(false);
+
+  useEffect(() => {
+    const key = `viewed_${cafe.slug}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    fetch("/api/track-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: cafe.slug }),
+    });
+  }, [cafe.slug]);
 
   const { stamps, addStamp, claimReward } = useStamps(
     cafe.slug,

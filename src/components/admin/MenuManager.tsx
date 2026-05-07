@@ -96,6 +96,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [todaySpecialId, setTodaySpecialId] = useState<string>("");
+  const [views, setViews] = useState<{ today: number; week: number } | null>(null);
 
   // extract tab
   const [preview, setPreview] = useState<string | null>(null);
@@ -131,13 +132,19 @@ export default function MenuManager({ cafeSlugs }: Props) {
     setTodaySpecialId(data?.today_special_id ?? "");
   }, [slug]);
 
+  const loadViews = useCallback(async () => {
+    const res = await fetch(`/api/track-view?slug=${slug}`);
+    if (res.ok) setViews(await res.json());
+  }, [slug]);
+
   useEffect(() => {
     setEditingId(null);
     setExtracted([]);
     setPreview(null);
     loadItems();
     loadSettings();
-  }, [loadItems, loadSettings]);
+    loadViews();
+  }, [loadItems, loadSettings, loadViews]);
 
   const toggleAvailable = async (id: string, current: boolean) => {
     const { error } = await supabase
@@ -317,13 +324,15 @@ export default function MenuManager({ cafeSlugs }: Props) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Total Items", value: items.length, color: "text-white" },
-          { label: "Veg", value: items.filter((i) => i.is_veg).length, color: "text-green-400" },
-          { label: "Non-Veg", value: items.filter((i) => !i.is_veg).length, color: "text-red-400" },
+          { label: "Total Items", value: items.length, color: "text-white", icon: "🍽️" },
+          { label: "Veg Items", value: items.filter((i) => i.is_veg).length, color: "text-green-400", icon: "🌿" },
+          { label: "Views Today", value: views?.today ?? "—", color: "text-violet-400", icon: "👁️" },
+          { label: "Views This Week", value: views?.week ?? "—", color: "text-blue-400", icon: "📊" },
         ].map((s) => (
           <div key={s.label} className="bg-white/4 border border-white/8 rounded-2xl p-4 text-center">
+            <p className="text-lg mb-1">{s.icon}</p>
             <p className={`text-2xl font-black ${s.color}`}>{s.value}</p>
             <p className="text-zinc-500 text-xs mt-1">{s.label}</p>
           </div>
