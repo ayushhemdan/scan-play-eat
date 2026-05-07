@@ -31,14 +31,20 @@ export default async function CafePage(
 
   if (!cafe) notFound();
 
-  // Fetch live menu from DB; fall back to static config if DB is empty
-  const { data: dbItems } = await supabase
-    .from("menu_items")
-    .select("*")
-    .eq("cafe_slug", slug)
-    .eq("is_available", true)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+  // Fetch live menu + settings from DB
+  const [{ data: dbItems }, { data: settings }] = await Promise.all([
+    supabase
+      .from("menu_items")
+      .select("*")
+      .eq("cafe_slug", slug)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("cafe_settings")
+      .select("today_special_id")
+      .eq("cafe_slug", slug)
+      .single(),
+  ]);
 
   const menu: MenuItem[] =
     dbItems && dbItems.length > 0
@@ -55,5 +61,7 @@ export default async function CafePage(
         }))
       : cafe.menu;
 
-  return <CafePageClient cafe={{ ...cafe, menu }} />;
+  const todaySpecial = settings?.today_special_id ?? cafe.todaySpecial;
+
+  return <CafePageClient cafe={{ ...cafe, menu, todaySpecial }} />;
 }

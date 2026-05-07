@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2, Edit3, Check, X, Loader, ImagePlus,
-  RefreshCw, AlertCircle, Leaf, Drumstick, Save,
+  RefreshCw, AlertCircle, Leaf, Drumstick, Save, Star,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -95,6 +95,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
   const [addForm, setAddForm] = useState<ItemForm>(BLANK_FORM);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [todaySpecialId, setTodaySpecialId] = useState<string>("");
 
   // extract tab
   const [preview, setPreview] = useState<string | null>(null);
@@ -121,12 +122,41 @@ export default function MenuManager({ cafeSlugs }: Props) {
     setLoading(false);
   }, [slug]);
 
+  const loadSettings = useCallback(async () => {
+    const { data } = await supabase
+      .from("cafe_settings")
+      .select("today_special_id")
+      .eq("cafe_slug", slug)
+      .single();
+    setTodaySpecialId(data?.today_special_id ?? "");
+  }, [slug]);
+
   useEffect(() => {
     setEditingId(null);
     setExtracted([]);
     setPreview(null);
     loadItems();
-  }, [loadItems]);
+    loadSettings();
+  }, [loadItems, loadSettings]);
+
+  const toggleAvailable = async (id: string, current: boolean) => {
+    const { error } = await supabase
+      .from("menu_items")
+      .update({ is_available: !current })
+      .eq("id", id);
+    if (error) { flash("Failed to update", false); return; }
+    setItems((prev) => prev.map((i) => i.id === id ? { ...i, is_available: !current } : i));
+    flash(current ? "Marked as sold out" : "Back to available");
+  };
+
+  const updateTodaySpecial = async (itemId: string) => {
+    const { error } = await supabase
+      .from("cafe_settings")
+      .upsert({ cafe_slug: slug, today_special_id: itemId || null });
+    if (error) { flash("Failed to update", false); return; }
+    setTodaySpecialId(itemId);
+    flash(itemId ? "Today's Special updated!" : "Today's Special removed");
+  };
 
   const grouped = CATEGORIES.reduce<Record<string, DbItem[]>>((acc, cat) => {
     const list = items.filter((i) => i.category === cat.id);
@@ -337,12 +367,38 @@ export default function MenuManager({ cafeSlugs }: Props) {
             <div className="flex items-center justify-between mb-4">
               <p className="text-zinc-500 text-sm">{items.length} items</p>
               <button
-                onClick={loadItems}
+                onClick={() => { loadItems(); loadSettings(); }}
                 className="text-zinc-500 hover:text-white text-xs flex items-center gap-1.5 transition-colors"
               >
                 <RefreshCw size={12} /> Refresh
               </button>
             </div>
+
+            {/* Today's Special picker */}
+            {items.length > 0 && (
+              <div className="mb-5 p-4 rounded-2xl border border-amber-500/20 bg-amber-500/5">
+                <p className="text-amber-400 font-bold text-xs uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Star size={11} /> Today&apos;s Special
+                </p>
+                <select
+                  value={todaySpecialId}
+                  onChange={(e) => updateTodaySpecial(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 text-white text-sm rounded-xl px-3 py-2.5 outline-none cursor-pointer"
+                >
+                  <option value="" className="bg-zinc-900">— None —</option>
+                  {items.map((item) => (
+                    <option key={item.id} value={item.id} className="bg-zinc-900">
+                      {item.emoji} {item.name} — ₹{item.price}
+                    </option>
+                  ))}
+                </select>
+                {todaySpecialId && (
+                  <p className="text-amber-400/60 text-[11px] mt-2">
+                    Showing as featured banner on the menu
+                  </p>
+                )}
+              </div>
+            )}
 
             {loading ? (
               <div className="flex justify-center py-24">
@@ -380,6 +436,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
                               item={item}
                               onEdit={() => startEdit(item)}
                               onDelete={() => deleteItem(item.id)}
+                              onToggleAvailable={() => toggleAvailable(item.id, item.is_available)}
                             />
                           )
                         )}
@@ -583,19 +640,27 @@ function ItemRow({
   item,
   onEdit,
   onDelete,
+  onToggleAvailable,
 }: {
   item: DbItem;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleAvailable: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
 
   return (
-    <div className="flex items-center gap-3 bg-white/4 border border-white/8 rounded-2xl px-4 py-3">
-      <span className="text-xl shrink-0">{item.emoji}</span>
+    <div className={`flex items-center gap-3 border rounded-2xl px-4 py-3 transition-colors ${
+      item.is_available
+        ? "bg-white/4 border-white/8"
+        : "bg-red-500/5 border-red-500/15"
+    }`}>
+      <span className={`text-xl shrink-0 ${!item.is_available ? "opacity-40" : ""}`}>{item.emoji}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-white text-sm font-semibold truncate">{item.name}</p>
+          <p className={`text-sm font-semibold truncate ${item.is_available ? "text-white" : "text-zinc-500 line-through"}`}>
+            {item.name}
+          </p>
           {item.is_veg
             ? <Leaf size={11} className="text-green-500 shrink-0" />
             : <Drumstick size={11} className="text-red-500 shrink-0" />}
@@ -605,7 +670,19 @@ function ItemRow({
         )}
       </div>
       <span className="text-amber-400 text-sm font-bold shrink-0">₹{item.price}</span>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Sold out toggle */}
+        <button
+          onClick={onToggleAvailable}
+          className={`text-[10px] font-black px-2.5 py-1.5 rounded-xl border transition-all ${
+            item.is_available
+              ? "bg-green-500/10 border-green-500/20 text-green-400 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400"
+              : "bg-red-500/15 border-red-500/25 text-red-400 hover:bg-green-500/10 hover:border-green-500/20 hover:text-green-400"
+          }`}
+        >
+          {item.is_available ? "Available" : "Sold Out"}
+        </button>
+
         <button
           onClick={onEdit}
           className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
