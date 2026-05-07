@@ -448,20 +448,12 @@ export default function MenuManager({ cafeSlugs }: Props) {
                   <RefreshCw size={12} /> Refresh
                 </button>
                 {items.length > 0 && (
-                  confirmDeleteAll ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-zinc-400">Delete all {items.length} items?</span>
-                      <button onClick={deleteAll} className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors">Yes, delete</button>
-                      <button onClick={() => setConfirmDeleteAll(false)} className="text-xs text-zinc-500 hover:text-white transition-colors">Cancel</button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmDeleteAll(true)}
-                      className="text-xs text-red-500 hover:text-red-400 transition-colors flex items-center gap-1"
-                    >
-                      <Trash2 size={11} /> Delete all
-                    </button>
-                  )
+                  <button
+                    onClick={() => setConfirmDeleteAll(true)}
+                    className="text-xs text-red-500 hover:text-red-400 transition-colors flex items-center gap-1"
+                  >
+                    <Trash2 size={11} /> Delete all
+                  </button>
                 )}
               </div>
             </div>
@@ -809,6 +801,60 @@ export default function MenuManager({ cafeSlugs }: Props) {
               </div>
             )}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete All Warning Modal */}
+      <AnimatePresence>
+        {confirmDeleteAll && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setConfirmDeleteAll(false)}
+              className="fixed inset-0 bg-black/70 z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 24, stiffness: 320 }}
+              className="fixed z-50 inset-0 flex items-center justify-center px-6 pointer-events-none"
+            >
+              <div className="bg-[#1a1a1a] border border-red-500/30 rounded-3xl p-7 w-full max-w-sm pointer-events-auto shadow-2xl">
+                {/* Icon */}
+                <div className="w-14 h-14 bg-red-500/15 border border-red-500/25 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                  <Trash2 size={24} className="text-red-400" />
+                </div>
+
+                {/* Text */}
+                <h3 className="text-white font-black text-xl text-center mb-2">Delete All Items?</h3>
+                <p className="text-zinc-400 text-sm text-center leading-relaxed mb-1">
+                  This will permanently delete all <span className="text-white font-bold">{items.length} items</span> from <span className="text-white font-bold">{slug}</span>.
+                </p>
+                <p className="text-red-400 text-xs text-center font-semibold mb-6">
+                  ⚠️ This cannot be undone.
+                </p>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={deleteAll}
+                    className="w-full py-3.5 rounded-2xl bg-red-500 hover:bg-red-400 text-white font-black text-sm transition-colors"
+                  >
+                    Yes, delete all {items.length} items
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteAll(false)}
+                    className="w-full py-3.5 rounded-2xl bg-white/6 hover:bg-white/10 text-zinc-300 font-bold text-sm transition-colors"
+                  >
+                    Cancel — keep my items
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
