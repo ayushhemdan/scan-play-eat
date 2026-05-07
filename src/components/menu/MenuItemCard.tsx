@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Plus, Minus, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Minus } from "lucide-react";
 import type { MenuItem, Badge } from "@/types/cafe";
 
 interface Props {
@@ -12,144 +12,193 @@ interface Props {
   onCustomise: () => void;
 }
 
-const BADGE: Record<Badge, { label: string; cls: string }> = {
-  bestseller: { label: "⭐ Bestseller", cls: "bg-amber-500/15 text-amber-400 border-amber-500/25" },
-  spicy:      { label: "🌶️ Spicy",     cls: "bg-red-500/15 text-red-400 border-red-500/25" },
-  new:        { label: "✨ New",        cls: "bg-blue-500/15 text-blue-300 border-blue-500/25" },
-  "must-try": { label: "🔥 Must Try",  cls: "bg-purple-500/15 text-purple-400 border-purple-500/25" },
+const BADGE: Record<Badge, { label: string; color: string }> = {
+  bestseller: { label: "⭐ Bestseller", color: "#fbbf24" },
+  spicy:      { label: "🌶️ Spicy",     color: "#f87171" },
+  new:        { label: "✨ New",        color: "#93c5fd" },
+  "must-try": { label: "🔥 Must Try",  color: "#c084fc" },
+};
+
+// Rich deep gradients per category — the visual identity of each section
+const CAT_GRADIENT: Record<string, string> = {
+  "burgers":     "linear-gradient(160deg, #92400e 0%, #431407 50%, #0f0804 100%)",
+  "cafe-bites":  "linear-gradient(160deg, #9a3412 0%, #431407 50%, #0f0603 100%)",
+  "sides":       "linear-gradient(160deg, #854d0e 0%, #3f2205 50%, #0d0902 100%)",
+  "hot-drinks":  "linear-gradient(160deg, #7c2d12 0%, #3b0f05 50%, #0a0503 100%)",
+  "cold-drinks": "linear-gradient(160deg, #075985 0%, #0c2b4a 50%, #030a14 100%)",
+  "desserts":    "linear-gradient(160deg, #9d174d 0%, #4a0726 50%, #0f0308 100%)",
+  "other":       "linear-gradient(160deg, #27272a 0%, #18181b 50%, #0f0f10 100%)",
+};
+
+const CAT_GLOW: Record<string, string> = {
+  "burgers":     "rgba(180,83,9,0.5)",
+  "cafe-bites":  "rgba(194,65,12,0.5)",
+  "sides":       "rgba(161,98,7,0.5)",
+  "hot-drinks":  "rgba(154,52,18,0.5)",
+  "cold-drinks": "rgba(7,89,133,0.5)",
+  "desserts":    "rgba(157,23,77,0.5)",
+  "other":       "rgba(63,63,70,0.5)",
 };
 
 export default function MenuItemCard({ item, qty, onAdd, onRemove, onCustomise }: Props) {
   const hasCustomisations = (item.customisations?.length ?? 0) > 0;
   const isBestseller = item.badges?.includes("bestseller");
+  const topBadge = item.badges?.[0];
 
   const handleAdd = () => {
     if (hasCustomisations) onCustomise();
     else onAdd();
   };
 
+  const gradient = CAT_GRADIENT[item.category] ?? CAT_GRADIENT["other"];
+  const glow = CAT_GLOW[item.category] ?? "rgba(63,63,70,0.4)";
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex rounded-3xl overflow-hidden border transition-all duration-200 ${
-        item.soldOut
-          ? "bg-white/2 border-white/5 opacity-60"
-          : isBestseller
-          ? "bg-amber-500/4 border-amber-500/20 hover:border-amber-500/35"
-          : "bg-[#141414] border-white/8 hover:border-white/18"
-      }`}
+      className="relative flex flex-col rounded-3xl overflow-hidden"
+      style={{
+        boxShadow: isBestseller
+          ? `0 0 0 1.5px rgba(245,158,11,0.4), 0 8px 32px rgba(180,83,9,0.25)`
+          : `0 4px 20px rgba(0,0,0,0.4)`,
+      }}
     >
-      {/* Left — details */}
-      <div className="flex-1 p-5 min-w-0 flex flex-col gap-2 justify-between">
-        {/* Veg dot + name */}
-        <div className="flex items-start gap-2">
-          <span className="mt-0.75 shrink-0 inline-flex items-center justify-center w-4.5 h-4.5 border-2 rounded-sm"
-            style={{ borderColor: item.isVeg ? "#22c55e" : "#ef4444" }}>
-            <span className="w-2 h-2 rounded-full"
-              style={{ background: item.isVeg ? "#22c55e" : "#ef4444" }} />
+      {/* ── Photo area ──────────────────────────────── */}
+      <div className="relative flex flex-col items-center justify-center pt-7 pb-4 px-3" style={{ background: gradient }}>
+
+        {/* Ambient glow behind emoji */}
+        <div
+          className="absolute w-24 h-24 rounded-full blur-2xl opacity-60 pointer-events-none"
+          style={{ background: glow }}
+        />
+
+        {/* Veg dot */}
+        <div className="absolute top-3 left-3 z-10">
+          <span
+            className="flex items-center justify-center w-4.5 h-4.5 border-2 rounded-sm"
+            style={{
+              borderColor: item.isVeg ? "#22c55e" : "#ef4444",
+              background: "rgba(0,0,0,0.4)",
+            }}
+          >
+            <span className="w-2 h-2 rounded-full" style={{ background: item.isVeg ? "#22c55e" : "#ef4444" }} />
           </span>
-          <p className="font-bold text-white text-[15px] leading-snug">{item.name}</p>
         </div>
 
-        {/* Badges */}
-        {item.badges && item.badges.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {item.badges.map((b) => (
-              <span key={b} className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${BADGE[b].cls}`}>
-                {BADGE[b].label}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Description or fallback info chips */}
-        {item.description ? (
-          <p className="text-zinc-500 text-[13px] leading-relaxed line-clamp-2">
-            {item.description}
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
-              item.isVeg
-                ? "bg-green-500/8 border-green-500/20 text-green-500"
-                : "bg-red-500/8 border-red-500/20 text-red-400"
-            }`}>
-              {item.isVeg ? "🌿 Pure Veg" : "🍗 Non-Veg"}
+        {/* Top badge */}
+        {topBadge && (
+          <div className="absolute top-3 right-3 z-10">
+            <span
+              className="text-[9px] font-black px-2 py-0.5 rounded-full"
+              style={{
+                background: "rgba(0,0,0,0.5)",
+                color: BADGE[topBadge].color,
+                border: `1px solid ${BADGE[topBadge].color}40`,
+              }}
+            >
+              {BADGE[topBadge].label}
             </span>
           </div>
         )}
 
-        {/* Price */}
-        <p className="font-black text-lg" style={{ color: "rgb(var(--brand-rgb))" }}>
-          ₹{item.price}
-        </p>
+        {/* Emoji — hero element */}
+        <motion.span
+          animate={isBestseller ? { y: [0, -4, 0] } : {}}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="relative z-10 text-6xl drop-shadow-lg select-none"
+        >
+          {item.emoji}
+        </motion.span>
 
-        {/* Customise hint */}
-        {hasCustomisations && !item.soldOut && (
-          <button
-            onClick={onCustomise}
-            className="text-[11px] text-zinc-500 hover:text-zinc-300 flex items-center gap-0.5 w-fit transition-colors"
-          >
-            Customisable <ChevronRight size={10} />
-          </button>
+        {/* Sold out */}
+        {item.soldOut && (
+          <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+            <span className="text-[10px] font-black tracking-widest text-zinc-300 uppercase bg-black/60 px-3 py-1 rounded-full">
+              Sold Out
+            </span>
+          </div>
         )}
+
+        {/* Bottom fade into card */}
+        <div className="absolute bottom-0 left-0 right-0 h-6 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, transparent, #111)" }} />
       </div>
 
-      {/* Right — photo area + add button */}
-      <div className="flex flex-col items-center gap-2.5 p-4 pl-2 shrink-0">
-        {/* Emoji "photo" */}
-        <div
-          className="w-24 h-24 rounded-2xl flex items-center justify-center text-5xl relative overflow-hidden shadow-lg"
-          style={{
-            background: isBestseller
-              ? "linear-gradient(135deg, rgba(245,158,11,0.22) 0%, rgba(245,158,11,0.06) 100%)"
-              : "linear-gradient(135deg, rgba(var(--brand-rgb),0.16) 0%, rgba(var(--brand-rgb),0.04) 100%)",
-          }}
-        >
-          <span className="drop-shadow-sm">{item.emoji}</span>
-          {item.soldOut && (
-            <div className="absolute inset-0 bg-black/65 flex items-center justify-center">
-              <span className="text-[9px] font-black text-zinc-300 tracking-widest uppercase">
-                Sold Out
-              </span>
-            </div>
+      {/* ── Details area ────────────────────────────── */}
+      <div className="flex flex-col flex-1 bg-[#111] px-3 pb-3 pt-2 gap-1">
+        <p className="font-black text-white text-[13px] leading-snug line-clamp-2">
+          {item.name}
+        </p>
+
+        {item.description ? (
+          <p className="text-zinc-500 text-[11px] leading-relaxed line-clamp-2 italic">
+            {item.description}
+          </p>
+        ) : (
+          <p className="text-[11px] font-medium" style={{ color: item.isVeg ? "#4ade80" : "#f87171" }}>
+            {item.isVeg ? "🌿 Pure Veg" : "🍗 Non-Veg"}
+          </p>
+        )}
+
+        {hasCustomisations && !item.soldOut && (
+          <p className="text-[10px] text-zinc-600">● Customisable</p>
+        )}
+
+        {/* Price + Add */}
+        <div className="flex items-center justify-between mt-auto pt-2">
+          <div>
+            <span className="text-[10px] text-zinc-500 font-semibold">₹</span>
+            <span className="font-black text-lg leading-none" style={{ color: "rgb(var(--brand-rgb))" }}>
+              {item.price}
+            </span>
+          </div>
+
+          {!item.soldOut && (
+            <AnimatePresence mode="wait">
+              {qty === 0 ? (
+                <motion.button
+                  key="add"
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.7, opacity: 0 }}
+                  whileTap={{ scale: 0.85 }}
+                  onClick={handleAdd}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-black text-[#0a0a0a] transition-opacity hover:opacity-85"
+                  style={{ background: "rgb(var(--brand-rgb))" }}
+                >
+                  <Plus size={11} strokeWidth={3} /> ADD
+                </motion.button>
+              ) : (
+                <motion.div
+                  key="qty"
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.7, opacity: 0 }}
+                  className="flex items-center gap-1.5"
+                >
+                  <button
+                    onClick={onRemove}
+                    className="w-6 h-6 rounded-lg flex items-center justify-center bg-white/10 hover:bg-white/15 text-white"
+                  >
+                    <Minus size={11} strokeWidth={3} />
+                  </button>
+                  <span className="font-black text-sm w-3.5 text-center" style={{ color: "rgb(var(--brand-rgb))" }}>
+                    {qty}
+                  </span>
+                  <button
+                    onClick={handleAdd}
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-[#0a0a0a] hover:opacity-85"
+                    style={{ background: "rgb(var(--brand-rgb))" }}
+                  >
+                    <Plus size={11} strokeWidth={3} />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
         </div>
-
-        {/* Add / qty controls */}
-        {!item.soldOut && (
-          qty === 0 ? (
-            <motion.button
-              whileTap={{ scale: 0.93 }}
-              onClick={handleAdd}
-              className="w-24 py-2 rounded-xl text-sm font-black text-[#0a0a0a] flex items-center justify-center gap-1 transition-opacity hover:opacity-85"
-              style={{ background: "rgb(var(--brand-rgb))" }}
-            >
-              <Plus size={14} strokeWidth={3} /> ADD
-            </motion.button>
-          ) : (
-            <div
-              className="w-24 flex items-center justify-between rounded-xl px-2 py-1.5"
-              style={{ background: "rgb(var(--brand-rgb))" }}
-            >
-              <button
-                onClick={onRemove}
-                className="w-6 h-6 rounded-lg bg-black/20 hover:bg-black/30 flex items-center justify-center text-[#0a0a0a] transition-colors"
-              >
-                <Minus size={13} strokeWidth={3} />
-              </button>
-              <span className="font-black text-sm text-[#0a0a0a] w-4 text-center">{qty}</span>
-              <button
-                onClick={handleAdd}
-                className="w-6 h-6 rounded-lg bg-black/20 hover:bg-black/30 flex items-center justify-center text-[#0a0a0a] transition-colors"
-              >
-                <Plus size={13} strokeWidth={3} />
-              </button>
-            </div>
-          )
-        )}
       </div>
     </motion.div>
   );

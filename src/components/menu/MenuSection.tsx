@@ -119,7 +119,7 @@ export default function MenuSection({ cafe, onOrder }: Props) {
       <div className="flex gap-8 mt-4">
         <div className="flex-1 min-w-0">
           {/* Header */}
-          <div className="mb-4">
+          <div className="mb-5">
             {isSearching ? (
               <p className="text-zinc-500 text-sm">
                 {filteredItems.length === 0
@@ -127,13 +127,16 @@ export default function MenuSection({ cafe, onOrder }: Props) {
                   : `${filteredItems.length} result${filteredItems.length > 1 ? "s" : ""} for "${search}"`}
               </p>
             ) : (
-              <div>
-                <p className="text-white font-black text-lg">
-                  {activeCategory_?.emoji} {activeCategory_?.label}
-                </p>
-                <p className="text-zinc-600 text-xs mt-0.5">
-                  {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}
-                </p>
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-3xl font-black text-white leading-none">
+                    {activeCategory_?.label}
+                  </p>
+                  <p className="text-zinc-600 text-xs mt-1.5 tracking-widest uppercase font-semibold">
+                    {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}
+                  </p>
+                </div>
+                <span className="text-5xl opacity-20 select-none">{activeCategory_?.emoji}</span>
               </div>
             )}
           </div>
@@ -145,10 +148,10 @@ export default function MenuSection({ cafe, onOrder }: Props) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex flex-col gap-3"
+              className="grid grid-cols-2 gap-3"
             >
               {filteredItems.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="col-span-2 flex flex-col items-center justify-center py-20 text-center">
                   <p className="text-5xl mb-4">
                     {isSearching ? "🔍" : activeCategory_?.emoji ?? "🍽️"}
                   </p>

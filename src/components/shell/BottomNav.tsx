@@ -34,6 +34,7 @@ export default function BottomNav({ cafe, active, onChange }: Props) {
               key={tab.id}
               onClick={() => onChange(tab.id)}
               className="relative flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors"
+              suppressHydrationWarning
             >
               {/* Active indicator bar at top */}
               {isActive && (
