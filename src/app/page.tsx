@@ -302,7 +302,7 @@ export default function HomePage() {
               <p className="text-5xl font-black text-white mt-1">₹2,999</p>
             </div>
             <p className="text-zinc-400 text-sm mb-1">+ <strong className="text-white">₹499/month</strong> maintenance</p>
-            <p className="text-zinc-600 text-xs mb-8">vs. ₹3,000–8,000/month in Zomato commissions</p>
+            <p className="text-zinc-600 text-xs mb-8">One-time setup · Cancel anytime</p>
 
             <div className="space-y-3 text-left mb-8">
               {[
