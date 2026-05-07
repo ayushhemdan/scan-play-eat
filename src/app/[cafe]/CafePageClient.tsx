@@ -11,6 +11,7 @@ import GamesSection from "@/components/games/GamesSection";
 import StampCard from "@/components/loyalty/StampCard";
 import AIBuddy from "@/components/ai/AIBuddy";
 import QRModal from "@/components/qr/QRModal";
+import FeedbackButton from "@/components/feedback/FeedbackButton";
 import { useStamps } from "@/lib/useStamps";
 
 interface Props {
@@ -74,6 +75,8 @@ export default function CafePageClient({ cafe }: Props) {
       )}
 
       {cafe.features.aiAssistant && <AIBuddy cafe={cafe} />}
+
+      <FeedbackButton cafeSlug={cafe.slug} cafeName={cafe.name} />
 
       <QRModal cafe={cafe} open={qrOpen} onClose={() => setQrOpen(false)} />
     </CafeShell>

@@ -77,7 +77,14 @@ const BLANK_FORM: ItemForm = {
 const catEmoji = (cat: string) =>
   CATEGORIES.find((c) => c.id === cat)?.emoji ?? "🍽️";
 
-type Tab = "items" | "add" | "extract";
+type Tab = "items" | "add" | "extract" | "feedback";
+
+type FeedbackRow = {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -97,6 +104,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [todaySpecialId, setTodaySpecialId] = useState<string>("");
   const [views, setViews] = useState<{ today: number; week: number } | null>(null);
+  const [feedbackList, setFeedbackList] = useState<FeedbackRow[]>([]);
 
   // extract tab
   const [preview, setPreview] = useState<string | null>(null);
@@ -137,6 +145,16 @@ export default function MenuManager({ cafeSlugs }: Props) {
     if (res.ok) setViews(await res.json());
   }, [slug]);
 
+  const loadFeedback = useCallback(async () => {
+    const { data } = await supabase
+      .from("feedback")
+      .select("*")
+      .eq("cafe_slug", slug)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setFeedbackList(data ?? []);
+  }, [slug]);
+
   useEffect(() => {
     setEditingId(null);
     setExtracted([]);
@@ -144,7 +162,8 @@ export default function MenuManager({ cafeSlugs }: Props) {
     loadItems();
     loadSettings();
     loadViews();
-  }, [loadItems, loadSettings, loadViews]);
+    loadFeedback();
+  }, [loadItems, loadSettings, loadViews, loadFeedback]);
 
   const toggleAvailable = async (id: string, current: boolean) => {
     const { error } = await supabase
@@ -346,6 +365,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
             { id: "items", label: "Menu Items" },
             { id: "add", label: "+ Add Item" },
             { id: "extract", label: "📷 Extract from Photo" },
+            { id: "feedback", label: `⭐ Feedback${feedbackList.length ? ` (${feedbackList.length})` : ""}` },
           ] as { id: Tab; label: string }[]
         ).map((t) => (
           <button
@@ -619,6 +639,80 @@ export default function MenuManager({ cafeSlugs }: Props) {
                 </div>
               )}
             </div>
+          </motion.div>
+        )}
+
+        {/* ── Feedback tab ── */}
+        {tab === "feedback" && (
+          <motion.div
+            key="feedback"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+          >
+            {feedbackList.length === 0 ? (
+              <div className="text-center py-20 text-zinc-600">
+                <p className="text-5xl mb-3">⭐</p>
+                <p className="font-semibold text-zinc-500">No feedback yet</p>
+                <p className="text-sm mt-1">Share the menu with customers — feedback will appear here</p>
+              </div>
+            ) : (
+              <div>
+                {/* Average rating */}
+                <div className="flex items-center gap-4 bg-amber-500/8 border border-amber-500/20 rounded-2xl p-5 mb-5">
+                  <div className="text-center">
+                    <p className="text-4xl font-black text-amber-400">
+                      {(feedbackList.reduce((s, f) => s + f.rating, 0) / feedbackList.length).toFixed(1)}
+                    </p>
+                    <p className="text-zinc-500 text-xs mt-1">avg rating</p>
+                  </div>
+                  <div className="flex-1">
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = feedbackList.filter((f) => f.rating === star).length;
+                      const pct = (count / feedbackList.length) * 100;
+                      return (
+                        <div key={star} className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] text-zinc-500 w-3">{star}</span>
+                          <div className="flex-1 h-1.5 bg-white/8 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-[10px] text-zinc-600 w-4">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-black text-white">{feedbackList.length}</p>
+                    <p className="text-zinc-500 text-xs mt-1">reviews</p>
+                  </div>
+                </div>
+
+                {/* List */}
+                <div className="space-y-3">
+                  {feedbackList.map((f) => (
+                    <div key={f.id} className="bg-white/4 border border-white/8 rounded-2xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex gap-0.5">
+                          {[1,2,3,4,5].map((s) => (
+                            <span key={s} className={`text-sm ${s <= f.rating ? "text-amber-400" : "text-zinc-700"}`}>★</span>
+                          ))}
+                        </div>
+                        <span className="text-zinc-600 text-[10px]">
+                          {new Date(f.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                        </span>
+                      </div>
+                      {f.comment && (
+                        <p className="text-zinc-300 text-sm leading-relaxed">{f.comment}</p>
+                      )}
+                      {!f.comment && (
+                        <p className="text-zinc-600 text-xs italic">No comment</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
