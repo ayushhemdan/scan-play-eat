@@ -14,19 +14,37 @@ interface Props {
 }
 
 function buildWhatsAppMessage(cart: CartItem[], tableNo: string, cafeName: string): string {
+  const itemCount = cart.reduce((s, e) => s + e.qty, 0);
+
   const lines = cart
     .map((entry) => {
+      const subtotal = entry.unitTotal * entry.qty;
       const extras =
         entry.selections.length > 0
-          ? `\n   ↳ ${entry.selections.map((s) => s.optionLabel).join(", ")}`
+          ? `\n      _${entry.selections.map((s) => s.optionLabel).join(", ")}_`
           : "";
-      return `• ${entry.qty}x ${entry.name} — ₹${entry.unitTotal * entry.qty}${extras}`;
+      return `${entry.emoji} *${entry.name}*\n      ${entry.qty} × ₹${entry.unitTotal} = *₹${subtotal}*${extras}`;
     })
-    .join("\n");
+    .join("\n\n");
 
   const total = cart.reduce((s, e) => s + e.unitTotal * e.qty, 0);
+  const now = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
-  return `🍔 *New Order — ${cafeName}*\n*Table: ${tableNo}*\n\n${lines}\n\n*Total: ₹${total}*\n\nPlease confirm! 🙏`;
+  return (
+`━━━━━━━━━━━━━━━━━━
+🧾 *ORDER — ${cafeName}*
+━━━━━━━━━━━━━━━━━━
+📍 Table *${tableNo}*  |  🕐 ${now}
+${itemCount} item${itemCount > 1 ? "s" : ""}
+
+${lines}
+
+━━━━━━━━━━━━━━━━━━
+💰 *Total: ₹${total}*
+━━━━━━━━━━━━━━━━━━
+
+_Please confirm this order. Thank you!_ 🙏`
+  );
 }
 
 export default function CartContents({ cart, tableNo, cafeName, whatsapp, onTableChange, onUpdateQty, onOrder }: Props) {

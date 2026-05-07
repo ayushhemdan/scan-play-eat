@@ -25,7 +25,7 @@ export default function TopNav({ cafe, active, onChange }: Props) {
     <header className="hidden md:flex fixed top-0 left-0 right-0 z-30 h-16 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/[0.06] items-center px-6">
       <div className="flex items-center justify-between w-full max-w-6xl mx-auto">
         {/* Left — cafe identity */}
-        <div className="flex items-center gap-3">
+        <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <span className="text-2xl">🍔</span>
           <div>
             <p
@@ -39,7 +39,7 @@ export default function TopNav({ cafe, active, onChange }: Props) {
               {cafe.address.split(",")[0]}
             </p>
           </div>
-        </div>
+        </a>
 
         {/* Center — tab links */}
         <nav className="flex items-center gap-1">
