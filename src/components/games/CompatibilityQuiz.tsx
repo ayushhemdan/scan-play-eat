@@ -98,7 +98,8 @@ export default function CompatibilityQuiz({ onBack }: Props) {
     <div className="max-w-lg mx-auto">
       <button
         onClick={onBack}
-        className="flex items-center gap-1.5 text-zinc-500 hover:text-white text-sm mb-6 transition-colors"
+        className="flex items-center gap-1.5 text-sm mb-6 transition-colors font-semibold"
+        style={{ color: "#fb7185" }}
       >
         <ArrowLeft size={15} /> Back to games
       </button>

@@ -75,13 +75,16 @@ export default function SpinWheel({ onBack }: Props) {
 
   return (
     <div className="max-w-lg mx-auto">
-      <button onClick={onBack} className="flex items-center gap-1.5 text-zinc-500 hover:text-white text-sm mb-6 transition-colors">
+      <button onClick={onBack} className="flex items-center gap-1.5 text-sm mb-6 transition-colors font-semibold" style={{ color: "#a78bfa" }}>
         <ArrowLeft size={15} /> Back to games
       </button>
 
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-black text-white">Who Pays the Bill? 💸</h2>
-        <p className="text-zinc-500 text-sm mt-1">Spin the wheel — fate decides, no arguments.</p>
+        <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 px-4 py-2 rounded-full mb-3">
+          <span className="text-lg">🎡</span>
+          <span className="text-violet-400 font-black text-sm uppercase tracking-widest">Spin the Wheel</span>
+        </div>
+        <p className="text-zinc-400 text-sm">Fate decides who pays — no arguments allowed.</p>
       </div>
 
       {/* Wheel + pointer */}
@@ -133,10 +136,10 @@ export default function SpinWheel({ onBack }: Props) {
       <button
         onClick={spin}
         disabled={spinning}
-        className="w-full py-4 rounded-2xl font-black text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[#0a0a0a]"
-        style={{ background: "rgb(var(--brand-rgb))", boxShadow: spinning ? "none" : "0 8px 30px rgba(var(--brand-rgb)/0.4)" }}
+        className="w-full py-4 rounded-2xl font-black text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white"
+        style={{ background: "#7c3aed", boxShadow: spinning ? "none" : "0 8px 30px rgba(124,58,237,0.5)" }}
       >
-        {spinning ? "Spinning..." : "Spin! 🎡"}
+        {spinning ? "Spinning... 🎡" : "Spin the Wheel! 🎡"}
       </button>
 
       {/* Result */}

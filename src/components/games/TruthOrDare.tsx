@@ -69,7 +69,8 @@ export default function TruthOrDare({ onBack }: Props) {
       {/* Back */}
       <button
         onClick={onBack}
-        className="flex items-center gap-1.5 text-zinc-500 hover:text-white text-sm mb-6 transition-colors"
+        className="flex items-center gap-1.5 text-sm mb-6 transition-colors font-semibold"
+        style={{ color: "#60a5fa" }}
       >
         <ArrowLeft size={15} /> Back to games
       </button>
@@ -101,7 +102,7 @@ export default function TruthOrDare({ onBack }: Props) {
           animate={{ opacity: 1, x: 0, rotateY: 0 }}
           exit={{ opacity: 0, x: direction * -60 }}
           transition={{ type: "spring", damping: 22, stiffness: 280 }}
-          className="rounded-3xl border p-8 md:p-10 min-h-[260px] flex flex-col items-center justify-center text-center relative overflow-hidden"
+          className="rounded-3xl border p-8 md:p-10 min-h-65 flex flex-col items-center justify-center text-center relative overflow-hidden"
           style={{
             borderColor: isTruth
               ? "rgba(59,130,246,0.25)"

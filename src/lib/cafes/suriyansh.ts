@@ -5,8 +5,8 @@ const suriyansh: Cafe = {
   name: "Suriyansh Cafe",
   tagline: "Burgers, bites & brews — Clement Town's favourite hangout",
   address: "Clement Town, Near Graphic Era University, Dehradun",
-  phone: "+91 99999 99999",
-  whatsapp: "919999999999",
+  phone: "+91 89796 16111",
+  whatsapp: "918979616111",
   openHours: "10 AM – 11 PM",
 
   theme: {

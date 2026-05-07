@@ -19,21 +19,21 @@ export default function StampCard({ loyalty, stamps, onClaim }: Props) {
   return (
     <>
       {/* Floating trigger */}
-      <button
+      <motion.button
+        whileTap={{ scale: 0.93 }}
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 md:bottom-6 right-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-sm text-white border border-white/10 bg-[#111] shadow-xl hover:bg-[#181818] transition-colors"
+        className="fixed bottom-24 md:bottom-6 right-4 z-30 flex items-center gap-2.5 px-4 py-2.5 rounded-full font-bold text-sm shadow-xl transition-all"
+        style={{
+          background: earned ? "rgb(var(--brand-rgb))" : "#1a1a1a",
+          border: earned ? "none" : "1px solid rgba(var(--brand-rgb),0.25)",
+          color: earned ? "#0a0a0a" : "white",
+          boxShadow: earned ? "0 6px 24px rgba(var(--brand-rgb),0.45)" : "0 4px 20px rgba(0,0,0,0.4)",
+        }}
       >
-        <Stamp size={15} style={{ color: "rgb(var(--brand-rgb))" }} />
-        <span className="text-zinc-300">
-          {progress}/{loyalty.stampsRequired}
-        </span>
-        {earned && (
-          <span
-            className="w-2 h-2 rounded-full animate-pulse"
-            style={{ background: "rgb(var(--brand-rgb))" }}
-          />
-        )}
-      </button>
+        <Stamp size={15} style={{ color: earned ? "#0a0a0a" : "rgb(var(--brand-rgb))" }} />
+        <span className="font-black">{progress}/{loyalty.stampsRequired}</span>
+        {earned && <span className="text-[10px] font-black opacity-80">CLAIM</span>}
+      </motion.button>
 
       {/* Drawer */}
       <AnimatePresence>

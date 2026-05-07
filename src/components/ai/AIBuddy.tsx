@@ -2,9 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Sparkles, Bot } from "lucide-react";
+import { X, Send, Sparkles, Bot, AlertCircle } from "lucide-react";
 import type { Cafe } from "@/types/cafe";
-import { getResponse } from "@/lib/ai/chatEngine";
 
 type Message = { role: "user" | "ai"; text: string };
 
@@ -15,12 +14,14 @@ const QUICK_PROMPTS = [
   "Something spicy 🌶️",
   "Build me a combo 🔥",
   "Date night pick 💑",
-  "Something under ₹150 💰",
-  "Light snack only 😌",
+  "Under ₹150 💰",
+  "Best cold drink?",
 ];
 
 function renderText(text: string) {
-  return text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>");
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\n/g, "<br/>");
 }
 
 interface Props { cafe: Cafe }
@@ -30,40 +31,96 @@ export default function AIBuddy({ cafe }: Props) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "ai",
-      text: `Hey! 👋 I'm **${cafe.aiName ?? "Cafe Buddy"}**, your personal guide to **${cafe.name}**. Ask me for recommendations, combos, or anything about the menu!`,
+      text: `Hey! 👋 I'm **${cafe.aiName ?? "Cafe Buddy"}**, your personal guide to **${cafe.name}**. Ask me anything — I know the whole menu!`,
     },
   ]);
   const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing]);
+  }, [messages, streaming]);
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 300);
   }, [open]);
 
-  const send = (text: string) => {
+  const send = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || typing) return;
-    setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
+    if (!trimmed || streaming) return;
+
     setInput("");
-    setTyping(true);
-    setTimeout(() => {
-      const reply = getResponse(trimmed, cafe.menu, cafe.name, cafe.aiName ?? "Cafe Buddy");
-      setMessages((prev) => [...prev, { role: "ai", text: reply }]);
-      setTyping(false);
-    }, 800 + Math.random() * 400);
+    setError(null);
+
+    // Add user message + placeholder AI message
+    const userMessage: Message = { role: "user", text: trimmed };
+    const aiPlaceholder: Message = { role: "ai", text: "" };
+    setMessages((prev) => [...prev, userMessage, aiPlaceholder]);
+    setStreaming(true);
+
+    // Build messages array for the API (only user/assistant turns)
+    const history = [...messages, userMessage]
+      .filter((m) => m.text.length > 0)
+      .map((m) => ({
+        role: m.role === "user" ? "user" : ("assistant" as const),
+        content: m.text,
+      }));
+
+    abortRef.current = new AbortController();
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history, cafeSlug: cafe.slug }),
+        signal: abortRef.current.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        throw new Error("Chat unavailable. Try again.");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+
+        // Update the last AI message in real time
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "ai", text: accumulated };
+          return updated;
+        });
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") return;
+      const msg = err instanceof Error ? err.message : "Something went wrong.";
+      setError(msg);
+      // Remove the empty placeholder
+      setMessages((prev) => prev.slice(0, -1));
+    } finally {
+      setStreaming(false);
+    }
+  };
+
+  const handleClose = () => {
+    abortRef.current?.abort();
+    setOpen(false);
   };
 
   const aiName = cafe.aiName ?? "Cafe Buddy";
 
   return (
     <>
-      {/* Floating trigger — left side to avoid clashing with stamp card on right */}
+      {/* Floating trigger */}
       <motion.button
         whileTap={{ scale: 0.93 }}
         onClick={() => setOpen(true)}
@@ -82,17 +139,14 @@ export default function AIBuddy({ cafe }: Props) {
       <AnimatePresence>
         {open && (
           <>
-            {/* Backdrop (mobile only) */}
             <motion.div
               key="backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
+              onClick={handleClose}
               className="fixed inset-0 bg-black/60 z-40 md:hidden"
             />
-
-            {/* Panel — bottom drawer on mobile, floating widget on desktop */}
             <motion.div
               key="panel"
               initial={{ y: "100%", opacity: 0 }}
@@ -107,19 +161,26 @@ export default function AIBuddy({ cafe }: Props) {
             >
               {/* Header */}
               <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-white/8 shrink-0">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                  style={{ background: "linear-gradient(135deg, #7C3AED, #4F46E5)" }}>
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                  style={{ background: "linear-gradient(135deg, #7C3AED, #4F46E5)" }}
+                >
                   <Bot size={17} className="text-white" />
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-white text-sm">{aiName}</p>
-                  <p className="text-[11px] text-green-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-                    Knows your full menu
+                  <p className="text-[11px] flex items-center gap-1" style={{ color: streaming ? "#f59e0b" : "#4ade80" }}>
+                    <span
+                      className="w-1.5 h-1.5 rounded-full inline-block"
+                      style={{ background: streaming ? "#f59e0b" : "#4ade80", animation: streaming ? "pulse 1s infinite" : "none" }}
+                    />
+                    {streaming ? "Thinking..." : "Knows your full menu"}
                   </p>
                 </div>
-                <button onClick={() => setOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/8 text-zinc-400 hover:text-white transition-colors">
+                <button
+                  onClick={handleClose}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/8 text-zinc-400 hover:text-white transition-colors"
+                >
                   <X size={16} />
                 </button>
               </div>
@@ -133,33 +194,38 @@ export default function AIBuddy({ cafe }: Props) {
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    <div
-                      className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                        msg.role === "user"
-                          ? "text-white rounded-br-sm"
-                          : "bg-white/5 border border-white/8 text-zinc-100 rounded-bl-sm"
-                      }`}
-                      style={msg.role === "user" ? { background: "rgb(var(--brand-rgb))" } : undefined}
-                      dangerouslySetInnerHTML={{ __html: renderText(msg.text) }}
-                    />
+                    {msg.role === "ai" && msg.text === "" ? (
+                      <div className="bg-white/5 border border-white/8 px-4 py-3 rounded-2xl rounded-bl-sm">
+                        <div className="flex gap-1 items-center h-4">
+                          {[0, 1, 2].map((j) => (
+                            <motion.span
+                              key={j}
+                              animate={{ y: [0, -4, 0] }}
+                              transition={{ duration: 0.5, repeat: Infinity, delay: j * 0.12 }}
+                              className="w-1.5 h-1.5 bg-violet-400 rounded-full block"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                          msg.role === "user"
+                            ? "text-white rounded-br-sm"
+                            : "bg-white/5 border border-white/8 text-zinc-100 rounded-bl-sm"
+                        }`}
+                        style={msg.role === "user" ? { background: "rgb(var(--brand-rgb))" } : undefined}
+                        dangerouslySetInnerHTML={{ __html: renderText(msg.text) }}
+                      />
+                    )}
                   </motion.div>
                 ))}
 
-                {/* Typing indicator */}
-                {typing && (
-                  <div className="flex justify-start">
-                    <div className="bg-white/5 border border-white/8 px-4 py-3 rounded-2xl rounded-bl-sm">
-                      <div className="flex gap-1 items-center">
-                        {[0, 1, 2].map((i) => (
-                          <motion.span
-                            key={i}
-                            animate={{ y: [0, -4, 0] }}
-                            transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.12 }}
-                            className="w-1.5 h-1.5 rounded-full bg-violet-400 inline-block"
-                          />
-                        ))}
-                      </div>
-                    </div>
+                {/* Error */}
+                {error && (
+                  <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                    <AlertCircle size={13} />
+                    {error}
                   </div>
                 )}
                 <div ref={bottomRef} />
@@ -171,7 +237,7 @@ export default function AIBuddy({ cafe }: Props) {
                   <button
                     key={p}
                     onClick={() => send(p)}
-                    disabled={typing}
+                    disabled={streaming}
                     className="flex-shrink-0 text-[11px] px-3 py-1.5 rounded-full border border-white/10 bg-white/4 text-zinc-400 hover:text-white hover:border-white/20 transition-colors disabled:opacity-40"
                   >
                     {p}
@@ -185,14 +251,14 @@ export default function AIBuddy({ cafe }: Props) {
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && send(input)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send(input)}
                   placeholder="Ask anything about the menu..."
-                  disabled={typing}
+                  disabled={streaming}
                   className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-violet-500/50 transition-colors disabled:opacity-50"
                 />
                 <button
                   onClick={() => send(input)}
-                  disabled={!input.trim() || typing}
+                  disabled={!input.trim() || streaming}
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white transition-opacity disabled:opacity-30"
                   style={{ background: "linear-gradient(135deg, #7C3AED, #4F46E5)" }}
                 >
