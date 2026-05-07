@@ -378,7 +378,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         {[
           { label: "Total Items", value: items.length, color: "text-white", icon: "🍽️" },
           { label: "Veg Items", value: items.filter((i) => i.is_veg).length, color: "text-green-400", icon: "🌿" },
@@ -394,19 +394,19 @@ export default function MenuManager({ cafeSlugs }: Props) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-white/4 border border-white/8 p-1 rounded-2xl mb-6 w-fit">
+      <div className="grid grid-cols-2 sm:flex gap-1 bg-white/4 border border-white/8 p-1 rounded-2xl mb-6 sm:w-fit">
         {(
           [
-            { id: "items", label: "Menu Items" },
+            { id: "items", label: "📋 Menu Items" },
             { id: "add", label: "+ Add Item" },
-            { id: "extract", label: "📷 Extract from Photo" },
+            { id: "extract", label: "📷 Extract Photo" },
             { id: "feedback", label: `⭐ Feedback${feedbackList.length ? ` (${feedbackList.length})` : ""}` },
           ] as { id: Tab; label: string }[]
         ).map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
+            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               tab === t.id
                 ? "bg-amber-400 text-black"
                 : "text-zinc-400 hover:text-white"
