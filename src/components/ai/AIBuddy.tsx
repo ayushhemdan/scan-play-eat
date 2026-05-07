@@ -124,7 +124,7 @@ export default function AIBuddy({ cafe }: Props) {
       <motion.button
         whileTap={{ scale: 0.93 }}
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 md:bottom-6 left-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-sm text-white shadow-xl"
+        className="fixed bottom-32 md:bottom-6 left-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-sm text-white shadow-xl"
         style={{
           background: "linear-gradient(135deg, #7C3AED, #4F46E5)",
           boxShadow: "0 8px 24px rgba(124,58,237,0.4)",

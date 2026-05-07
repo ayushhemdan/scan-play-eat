@@ -22,7 +22,7 @@ export default function StampCard({ loyalty, stamps, onClaim }: Props) {
       <motion.button
         whileTap={{ scale: 0.93 }}
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 md:bottom-6 right-4 z-30 flex items-center gap-2.5 px-4 py-2.5 rounded-full font-bold text-sm shadow-xl transition-all"
+        className="fixed bottom-32 md:bottom-6 right-4 z-30 flex items-center gap-2.5 px-4 py-2.5 rounded-full font-bold text-sm shadow-xl transition-all"
         style={{
           background: earned ? "rgb(var(--brand-rgb))" : "#1a1a1a",
           border: earned ? "none" : "1px solid rgba(var(--brand-rgb),0.25)",
