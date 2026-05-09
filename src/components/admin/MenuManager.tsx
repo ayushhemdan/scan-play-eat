@@ -1061,13 +1061,18 @@ function FormFields({
   const set = (key: keyof ItemForm, val: string | boolean) =>
     onChange({ ...form, [key]: val });
 
+  const [uploadError, setUploadError] = useState("");
+
   const handleImageUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) return;
+    if (!file.type.startsWith("image/")) { setUploadError("Please select an image file"); return; }
     setUploading(true);
+    setUploadError("");
     const ext = file.name.split(".").pop();
     const path = `${slug}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("menu-images").upload(path, file, { upsert: true });
-    if (!error) {
+    if (error) {
+      setUploadError(`Upload failed: ${error.message}`);
+    } else {
       const { data: { publicUrl } } = supabase.storage.from("menu-images").getPublicUrl(path);
       onChange({ ...form, image_url: publicUrl });
     }
@@ -1153,6 +1158,9 @@ function FormFields({
                 className="text-xs text-red-400 hover:text-red-300 transition-colors text-left">
                 Remove photo
               </button>
+            )}
+            {uploadError && (
+              <p className="text-xs text-red-400 leading-snug">{uploadError}</p>
             )}
           </div>
         </div>
