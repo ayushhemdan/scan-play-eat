@@ -37,6 +37,7 @@ export type MenuItem = {
   category: string;
   isVeg: boolean;
   emoji: string;
+  imageUrl?: string;
   badges?: Badge[];
   soldOut?: boolean;
   customisations?: CustomGroup[];

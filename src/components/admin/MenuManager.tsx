@@ -24,6 +24,7 @@ type DbItem = {
   category: string;
   is_veg: boolean;
   emoji: string;
+  image_url: string | null;
   badges: string[];
   is_available: boolean;
   sort_order: number;
@@ -36,6 +37,7 @@ type ItemForm = {
   category: string;
   is_veg: boolean;
   emoji: string;
+  image_url: string;
 };
 
 type ExtractedItem = {
@@ -72,6 +74,7 @@ const BLANK_FORM: ItemForm = {
   category: "burgers",
   is_veg: true,
   emoji: "🍔",
+  image_url: "",
 };
 
 const catEmoji = (cat: string) =>
@@ -252,6 +255,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
       category: item.category,
       is_veg: item.is_veg,
       emoji: item.emoji,
+      image_url: item.image_url ?? "",
     });
   };
 
@@ -267,6 +271,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
         category: editForm.category,
         is_veg: editForm.is_veg,
         emoji: editForm.emoji,
+        image_url: editForm.image_url || null,
       })
       .eq("id", editingId);
     setSaving(false);
@@ -290,6 +295,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
       category: addForm.category,
       is_veg: addForm.is_veg,
       emoji: addForm.emoji,
+      image_url: addForm.image_url || null,
       badges: [],
       is_available: true,
       sort_order: items.length,
@@ -567,6 +573,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
                               onSave={saveEdit}
                               onCancel={() => setEditingId(null)}
                               saving={saving}
+                              slug={slug}
                             />
                           ) : (
                             <ItemRow
@@ -600,7 +607,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
           >
             <div className="bg-white/4 border border-white/8 rounded-3xl p-6">
               <h2 className="text-white font-bold text-lg mb-5">Add New Item</h2>
-              <FormFields form={addForm} onChange={setAddForm} />
+              <FormFields form={addForm} onChange={setAddForm} slug={slug} />
               <button
                 onClick={addItem}
                 disabled={saving}
@@ -1006,16 +1013,18 @@ function EditRow({
   onSave,
   onCancel,
   saving,
+  slug,
 }: {
   form: ItemForm;
   onChange: (f: ItemForm) => void;
   onSave: () => void;
   onCancel: () => void;
   saving: boolean;
+  slug: string;
 }) {
   return (
     <div className="bg-amber-400/6 border border-amber-400/20 rounded-2xl p-4">
-      <FormFields form={form} onChange={onChange} compact />
+      <FormFields form={form} onChange={onChange} compact slug={slug} />
       <div className="flex gap-2 mt-4">
         <button
           onClick={onSave}
@@ -1040,13 +1049,31 @@ function FormFields({
   form,
   onChange,
   compact = false,
+  slug,
 }: {
   form: ItemForm;
   onChange: (f: ItemForm) => void;
   compact?: boolean;
+  slug: string;
 }) {
+  const [uploading, setUploading] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
+
   const set = (key: keyof ItemForm, val: string | boolean) =>
     onChange({ ...form, [key]: val });
+
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${slug}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("menu-images").upload(path, file, { upsert: true });
+    if (!error) {
+      const { data: { publicUrl } } = supabase.storage.from("menu-images").getPublicUrl(path);
+      onChange({ ...form, image_url: publicUrl });
+    }
+    setUploading(false);
+  };
 
   return (
     <div className={`grid gap-4 ${compact ? "" : "sm:grid-cols-2"}`}>
@@ -1096,8 +1123,41 @@ function FormFields({
         />
       </div>
 
+      {/* Photo upload */}
+      <div className={compact ? "" : "sm:col-span-2"}>
+        <label className="text-xs text-zinc-500 mb-1.5 block">Food Photo <span className="text-zinc-600">(optional — replaces emoji)</span></label>
+        <input ref={imgRef} type="file" accept="image/*" className="sr-only"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
+        <div className="flex items-center gap-3">
+          {form.image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={form.image_url} alt="preview" className="w-16 h-16 rounded-xl object-cover border border-white/10" />
+          ) : (
+            <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
+              {form.emoji}
+            </div>
+          )}
+          <div className="flex flex-col gap-2 flex-1">
+            <button
+              type="button"
+              onClick={() => imgRef.current?.click()}
+              disabled={uploading}
+              className="px-4 py-2 rounded-xl bg-white/8 hover:bg-white/12 border border-white/10 text-zinc-300 text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {uploading ? <><Loader size={13} className="animate-spin" /> Uploading...</> : <><ImagePlus size={13} /> {form.image_url ? "Change Photo" : "Upload Photo"}</>}
+            </button>
+            {form.image_url && (
+              <button type="button" onClick={() => set("image_url", "")}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors text-left">
+                Remove photo
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div>
-        <label className="text-xs text-zinc-500 mb-1.5 block">Emoji</label>
+        <label className="text-xs text-zinc-500 mb-1.5 block">Emoji <span className="text-zinc-600">(shown when no photo)</span></label>
         <input
           value={form.emoji}
           onChange={(e) => set("emoji", e.target.value)}

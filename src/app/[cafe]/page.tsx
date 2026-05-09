@@ -56,6 +56,7 @@ export default async function CafePage(
           category: row.category,
           isVeg: row.is_veg,
           emoji: row.emoji ?? "🍽️",
+          imageUrl: row.image_url ?? undefined,
           badges: (row.badges ?? []) as Badge[],
           soldOut: row.is_available === false,
         }))

@@ -66,22 +66,43 @@ export default function MenuItemCard({ item, qty, onAdd, onRemove, onCustomise }
       }}
     >
       {/* ── Photo area ──────────────────────────────── */}
-      <div className="relative flex flex-col items-center justify-center pt-7 pb-4 px-3" style={{ background: gradient }}>
+      <div className="relative h-36 overflow-hidden" style={{ background: gradient }}>
 
-        {/* Ambient glow behind emoji */}
-        <div
-          className="absolute w-24 h-24 rounded-full blur-2xl opacity-60 pointer-events-none"
-          style={{ background: glow }}
-        />
+        {item.imageUrl ? (
+          <>
+            {/* Real food photo */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.imageUrl}
+              alt={item.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Subtle darkening overlay so badges stay readable */}
+            <div className="absolute inset-0 bg-black/20" />
+          </>
+        ) : (
+          <>
+            {/* Ambient glow behind emoji */}
+            <div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full blur-2xl opacity-60 pointer-events-none"
+              style={{ background: glow }}
+            />
+            {/* Emoji — hero element */}
+            <motion.span
+              animate={isBestseller ? { y: [0, -4, 0] } : {}}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl drop-shadow-lg select-none"
+            >
+              {item.emoji}
+            </motion.span>
+          </>
+        )}
 
         {/* Veg dot */}
         <div className="absolute top-3 left-3 z-10">
           <span
             className="flex items-center justify-center w-4.5 h-4.5 border-2 rounded-sm"
-            style={{
-              borderColor: item.isVeg ? "#22c55e" : "#ef4444",
-              background: "rgba(0,0,0,0.4)",
-            }}
+            style={{ borderColor: item.isVeg ? "#22c55e" : "#ef4444", background: "rgba(0,0,0,0.5)" }}
           >
             <span className="w-2 h-2 rounded-full" style={{ background: item.isVeg ? "#22c55e" : "#ef4444" }} />
           </span>
@@ -92,37 +113,24 @@ export default function MenuItemCard({ item, qty, onAdd, onRemove, onCustomise }
           <div className="absolute top-3 right-3 z-10">
             <span
               className="text-[9px] font-black px-2 py-0.5 rounded-full"
-              style={{
-                background: "rgba(0,0,0,0.5)",
-                color: BADGE[topBadge].color,
-                border: `1px solid ${BADGE[topBadge].color}40`,
-              }}
+              style={{ background: "rgba(0,0,0,0.6)", color: BADGE[topBadge].color, border: `1px solid ${BADGE[topBadge].color}40` }}
             >
               {BADGE[topBadge].label}
             </span>
           </div>
         )}
 
-        {/* Emoji — hero element */}
-        <motion.span
-          animate={isBestseller ? { y: [0, -4, 0] } : {}}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="relative z-10 text-6xl drop-shadow-lg select-none"
-        >
-          {item.emoji}
-        </motion.span>
-
         {/* Sold out */}
         {item.soldOut && (
-          <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
             <span className="text-[10px] font-black tracking-widest text-zinc-300 uppercase bg-black/60 px-3 py-1 rounded-full">
               Sold Out
             </span>
           </div>
         )}
 
-        {/* Bottom fade into card */}
-        <div className="absolute bottom-0 left-0 right-0 h-6 pointer-events-none"
+        {/* Bottom fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, transparent, #111)" }} />
       </div>
 
