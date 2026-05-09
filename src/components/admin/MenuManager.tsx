@@ -1057,11 +1057,30 @@ function FormFields({
   slug: string;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   const set = (key: keyof ItemForm, val: string | boolean) =>
     onChange({ ...form, [key]: val });
 
-  const [uploadError, setUploadError] = useState("");
+  const generateAIPhoto = async () => {
+    if (!form.name.trim()) { setUploadError("Enter item name first"); return; }
+    setGenerating(true);
+    setUploadError("");
+    try {
+      const res = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: form.name, description: form.description, category: form.category }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Generation failed");
+      onChange({ ...form, image_url: data.url });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Generation failed");
+    }
+    setGenerating(false);
+  };
 
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) { setUploadError("Please select an image file"); return; }
@@ -1140,27 +1159,37 @@ function FormFields({
             </div>
           )}
           <div className="flex flex-col gap-2 flex-1">
+            {/* Upload from device */}
             <label
-              className={`px-4 py-2 rounded-xl bg-white/8 border border-white/10 text-zinc-300 text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer ${uploading ? "opacity-50 pointer-events-none" : "hover:bg-white/12"}`}
+              className={`px-3 py-2 rounded-xl bg-white/8 border border-white/10 text-zinc-300 text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer ${uploading || generating ? "opacity-50 pointer-events-none" : "hover:bg-white/12"}`}
             >
-              {uploading
-                ? <><Loader size={13} className="animate-spin" /> Uploading...</>
-                : <><ImagePlus size={13} /> {form.image_url ? "Change Photo" : "Upload Photo"}</>}
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }}
-              />
+              {uploading ? <><Loader size={13} className="animate-spin" /> Uploading...</> : <><ImagePlus size={13} /> Upload</>}
+              <input type="file" accept="image/*" className="sr-only"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
             </label>
+
+            {/* AI generate */}
+            <button
+              type="button"
+              onClick={generateAIPhoto}
+              disabled={generating || uploading}
+              className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all flex items-center gap-2 ${
+                generating
+                  ? "bg-violet-500/20 border-violet-500/30 text-violet-300 opacity-70"
+                  : "bg-violet-500/10 border-violet-500/25 text-violet-300 hover:bg-violet-500/20"
+              }`}
+            >
+              {generating ? <><Loader size={13} className="animate-spin" /> Generating...</> : <>✨ AI Photo</>}
+            </button>
+
             {form.image_url && (
               <button type="button" onClick={() => set("image_url", "")}
-                className="text-xs text-red-400 hover:text-red-300 transition-colors text-left">
-                Remove photo
+                className="text-xs text-red-400 hover:text-red-300 transition-colors">
+                Remove
               </button>
             )}
             {uploadError && (
-              <p className="text-xs text-red-400 leading-snug">{uploadError}</p>
+              <p className="text-xs text-red-400 leading-snug w-full">{uploadError}</p>
             )}
           </div>
         </div>
