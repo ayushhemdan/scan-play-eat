@@ -8,8 +8,23 @@ import CompatibilityQuiz from "./CompatibilityQuiz";
 import VibeQuiz from "./VibeQuiz";
 import SpinWheel from "./SpinWheel";
 import HotTake from "./HotTake";
+import QuickFire from "./QuickFire";
 
-type GameId = "truth-dare" | "compatibility" | "vibe-quiz" | "spin-wheel" | "hot-take";
+type GameId = "truth-dare" | "compatibility" | "vibe-quiz" | "spin-wheel" | "hot-take" | "quick-fire";
+
+const STAR: {
+  id: GameId; emoji: string; title: string; desc: string; tag: string;
+  accent: string; bg: string; border: string;
+} = {
+  id: "quick-fire",
+  emoji: "⚡",
+  title: "Quick Fire",
+  desc: "Place the phone between you two. Slam your side first when the category drops. Say the answer. 7 rounds. One winner.",
+  tag: "2 players",
+  accent: "#facc15",
+  bg: "linear-gradient(135deg, rgba(234,179,8,0.22) 0%, rgba(234,88,12,0.15) 60%, transparent 100%)",
+  border: "rgba(250,204,21,0.35)",
+};
 
 const FEATURED: {
   id: GameId; emoji: string; title: string; desc: string; tag: string;
@@ -84,6 +99,7 @@ export default function GamesSection({ cafe }: Props) {
   if (activeGame === "vibe-quiz") return <VibeQuiz cafe={cafe} onBack={back} />;
   if (activeGame === "spin-wheel") return <SpinWheel onBack={back} />;
   if (activeGame === "hot-take") return <HotTake onBack={back} />;
+  if (activeGame === "quick-fire") return <QuickFire onBack={back} />;
 
   return (
     <div className="max-w-2xl mx-auto md:max-w-none">
@@ -103,10 +119,55 @@ export default function GamesSection({ cafe }: Props) {
           </div>
           <span className="ml-auto flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-green-400 bg-green-400/10 border border-green-400/20 px-3 py-1.5 rounded-full">
             <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-            5 Games
+            6 Games
           </span>
         </div>
       </div>
+
+      {/* ⭐ Star game — full width hero */}
+      <motion.button
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setActiveGame(STAR.id)}
+        className="relative group text-left rounded-3xl overflow-hidden p-6 mb-4 w-full"
+        style={{ background: STAR.bg, border: `1px solid ${STAR.border}` }}
+      >
+        <motion.div
+          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 2.5, repeat: Infinity }}
+          className="absolute -top-10 -right-10 w-56 h-56 rounded-full blur-3xl pointer-events-none"
+          style={{ background: STAR.accent }}
+        />
+        <div className="relative z-10 flex items-center gap-5">
+          <motion.span
+            animate={{ rotate: [0, -15, 15, -15, 0] }}
+            transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
+            className="text-6xl shrink-0"
+          >
+            {STAR.emoji}
+          </motion.span>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full text-black"
+                style={{ background: STAR.accent }}>
+                ⭐ FEATURED
+              </span>
+              <span className="text-[10px] text-zinc-400">{STAR.tag}</span>
+            </div>
+            <h3 className="font-black text-white text-2xl leading-tight mb-1">{STAR.title}</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed">{STAR.desc}</p>
+          </div>
+          <motion.span
+            animate={{ x: [0, 5, 0] }}
+            transition={{ duration: 1, repeat: Infinity }}
+            className="text-2xl font-black shrink-0"
+            style={{ color: STAR.accent }}
+          >
+            →
+          </motion.span>
+        </div>
+      </motion.button>
 
       {/* Featured — big cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
