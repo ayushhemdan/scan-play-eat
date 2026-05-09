@@ -1057,7 +1057,6 @@ function FormFields({
   slug: string;
 }) {
   const [uploading, setUploading] = useState(false);
-  const imgRef = useRef<HTMLInputElement>(null);
 
   const set = (key: keyof ItemForm, val: string | boolean) =>
     onChange({ ...form, [key]: val });
@@ -1125,27 +1124,30 @@ function FormFields({
 
       {/* Photo upload */}
       <div className={compact ? "" : "sm:col-span-2"}>
-        <label className="text-xs text-zinc-500 mb-1.5 block">Food Photo <span className="text-zinc-600">(optional — replaces emoji)</span></label>
-        <input ref={imgRef} type="file" accept="image/*" className="sr-only"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
+        <p className="text-xs text-zinc-500 mb-1.5">Food Photo <span className="text-zinc-600">(optional — replaces emoji)</span></p>
         <div className="flex items-center gap-3">
           {form.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={form.image_url} alt="preview" className="w-16 h-16 rounded-xl object-cover border border-white/10" />
+            <img src={form.image_url} alt="preview" className="w-16 h-16 rounded-xl object-cover border border-white/10 shrink-0" />
           ) : (
-            <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
+            <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl shrink-0">
               {form.emoji}
             </div>
           )}
           <div className="flex flex-col gap-2 flex-1">
-            <button
-              type="button"
-              onClick={() => imgRef.current?.click()}
-              disabled={uploading}
-              className="px-4 py-2 rounded-xl bg-white/8 hover:bg-white/12 border border-white/10 text-zinc-300 text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2"
+            <label
+              className={`px-4 py-2 rounded-xl bg-white/8 border border-white/10 text-zinc-300 text-sm font-semibold transition-colors flex items-center gap-2 cursor-pointer ${uploading ? "opacity-50 pointer-events-none" : "hover:bg-white/12"}`}
             >
-              {uploading ? <><Loader size={13} className="animate-spin" /> Uploading...</> : <><ImagePlus size={13} /> {form.image_url ? "Change Photo" : "Upload Photo"}</>}
-            </button>
+              {uploading
+                ? <><Loader size={13} className="animate-spin" /> Uploading...</>
+                : <><ImagePlus size={13} /> {form.image_url ? "Change Photo" : "Upload Photo"}</>}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }}
+              />
+            </label>
             {form.image_url && (
               <button type="button" onClick={() => set("image_url", "")}
                 className="text-xs text-red-400 hover:text-red-300 transition-colors text-left">
