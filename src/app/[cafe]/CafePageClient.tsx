@@ -16,9 +16,10 @@ import { useStamps } from "@/lib/useStamps";
 
 interface Props {
   cafe: Cafe;
+  forceOpen?: boolean | null;
 }
 
-export default function CafePageClient({ cafe }: Props) {
+export default function CafePageClient({ cafe, forceOpen }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("menu");
   const [qrOpen, setQrOpen] = useState(false);
 
@@ -43,7 +44,7 @@ export default function CafePageClient({ cafe }: Props) {
       <TopNav cafe={cafe} active={activeTab} onChange={setActiveTab} />
 
       <div className="md:pt-16 pb-20 md:pb-0">
-        <CafeHero cafe={cafe} onQRClick={() => setQrOpen(true)} />
+        <CafeHero cafe={cafe} onQRClick={() => setQrOpen(true)} forceOpen={forceOpen} />
 
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-8">
           {activeTab === "menu" && (

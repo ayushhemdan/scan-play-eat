@@ -8,10 +8,11 @@ import { isOpen } from "@/lib/utils";
 interface Props {
   cafe: Cafe;
   onQRClick?: () => void;
+  forceOpen?: boolean | null;
 }
 
-export default function CafeHero({ cafe, onQRClick }: Props) {
-  const open = isOpen(cafe.openHours);
+export default function CafeHero({ cafe, onQRClick, forceOpen }: Props) {
+  const open = forceOpen !== null && forceOpen !== undefined ? forceOpen : isOpen(cafe.openHours);
 
   return (
     <div className="relative overflow-hidden">

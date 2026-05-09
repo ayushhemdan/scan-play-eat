@@ -105,6 +105,7 @@ export default function MenuManager({ cafeSlugs }: Props) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [todaySpecialId, setTodaySpecialId] = useState<string>("");
+  const [isOpen, setIsOpen] = useState<boolean | null>(null);
   const [views, setViews] = useState<{ today: number; week: number } | null>(null);
   const [feedbackList, setFeedbackList] = useState<FeedbackRow[]>([]);
 
@@ -136,11 +137,19 @@ export default function MenuManager({ cafeSlugs }: Props) {
   const loadSettings = useCallback(async () => {
     const { data } = await supabase
       .from("cafe_settings")
-      .select("today_special_id")
+      .select("today_special_id, is_open")
       .eq("cafe_slug", slug)
       .single();
     setTodaySpecialId(data?.today_special_id ?? "");
+    setIsOpen(data?.is_open ?? null);
   }, [slug]);
+
+  const toggleOpen = async () => {
+    const next = !(isOpen ?? true);
+    await supabase.from("cafe_settings").upsert({ cafe_slug: slug, is_open: next });
+    setIsOpen(next);
+    flash(next ? "Cafe marked as Open 🟢" : "Cafe marked as Closed 🔴");
+  };
 
   const loadViews = useCallback(async () => {
     const res = await fetch(`/api/track-view?slug=${slug}`);
@@ -366,15 +375,30 @@ export default function MenuManager({ cafeSlugs }: Props) {
           <h1 className="text-3xl font-black text-white">Menu Manager</h1>
           <p className="text-zinc-500 text-sm mt-1">Add, edit and manage items — no code needed</p>
         </div>
-        <select
-          value={slug}
-          onChange={(e) => setSlug(e.target.value)}
-          className="bg-white/5 border border-white/10 text-white text-sm rounded-2xl px-4 py-2.5 outline-none cursor-pointer"
-        >
-          {cafeSlugs.map((s) => (
-            <option key={s} value={s} className="bg-zinc-900">{s}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-3">
+          {/* Open/Closed toggle */}
+          <button
+            onClick={toggleOpen}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-sm font-bold transition-all ${
+              (isOpen ?? true)
+                ? "bg-green-500/10 border-green-500/25 text-green-400"
+                : "bg-red-500/10 border-red-500/25 text-red-400"
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${(isOpen ?? true) ? "bg-green-400 animate-pulse" : "bg-red-400"}`} />
+            {(isOpen ?? true) ? "Open" : "Closed"}
+          </button>
+
+          <select
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            className="bg-white/5 border border-white/10 text-white text-sm rounded-2xl px-4 py-2.5 outline-none cursor-pointer"
+          >
+            {cafeSlugs.map((s) => (
+              <option key={s} value={s} className="bg-zinc-900">{s}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Stats */}

@@ -41,7 +41,7 @@ export default async function CafePage(
       .order("created_at", { ascending: true }),
     supabase
       .from("cafe_settings")
-      .select("today_special_id")
+      .select("today_special_id, is_open")
       .eq("cafe_slug", slug)
       .single(),
   ]);
@@ -62,6 +62,7 @@ export default async function CafePage(
       : cafe.menu;
 
   const todaySpecial = settings?.today_special_id ?? cafe.todaySpecial;
+  const forceOpen = settings?.is_open ?? null;
 
-  return <CafePageClient cafe={{ ...cafe, menu, todaySpecial }} />;
+  return <CafePageClient cafe={{ ...cafe, menu, todaySpecial }} forceOpen={forceOpen} />;
 }
